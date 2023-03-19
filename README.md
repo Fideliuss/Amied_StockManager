@@ -1,0 +1,1 @@
+# Amied_StockManager
