@@ -32,7 +32,6 @@ class EnvoiGMail:
         self.smtp_conn.login(self.username, self.password)
 
     def mail_set_body(self, dest_email, objet, message):  # Envoi d'un message
-        y_date = datetime.date.today() - datetime.timedelta(days=1)
         self.msg['From'] = self.username
         self.msg['To'] = dest_email
         self.msg['Subject'] = objet
