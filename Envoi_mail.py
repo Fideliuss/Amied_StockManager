@@ -3,8 +3,11 @@ from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 from email.mime.base import MIMEBase
 from email import encoders
-import datetime
+import logging
 import keyring
+
+logging.basicConfig(level=logging.DEBUG, filename="envoi_email_log.txt", filemode="w",
+                    format="%(asctime)s - %(levelname)s - %(message)s")
 
 
 class EnvoiGMail:
@@ -57,15 +60,18 @@ def main():
         mail_adress = input("Adresse mail : ")
         try:
             email = EnvoiGMail(mail_adress)
+            logging.info("Connexion établie")
             print("Connexion établie")
-            email.mail_set_body(input("Destinataire : "), input("Objet"), input("Message : "))
+            email.mail_set_body(input("Destinataire : "), input("Objet :"), input("Message : "))
             file_path = input("Chemin du fichier : ")
             if file_path != "":
                 email.mail_set_attach(file_path)
             email.send_mail()
+            logging.info("Email envoyé")
             print("Email envoyé")
             break
         except smtplib.SMTPAuthenticationError:
+            logging.warning("Mot de passe ou identifiant incorect")
             print("Mot de passe ou identifiant incorect")
 
 
