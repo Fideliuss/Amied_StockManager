@@ -61,26 +61,27 @@ class StockUI(tk.Tk):
         for reference in reference_dict:
             tree.insert('', tk.END, values=reference)
         tree.configure(height=len(reference_dict))
-        tree.bind('<<TreeviewSelect>>', lambda event: self.modif_reference(tree))
+        tree.bind('<<TreeviewSelect>>', lambda event: self.modif_stock_reference(tree))
         tree.pack()
         return tree
 
-    def modif_reference(self, tree):
+    def modif_stock_reference(self, tree):
         selected_item = tree.selection()
         item = tree.set(selected_item, self.headers[0])
         if item != "":
             modif_frame = ttk.Frame(self)
             modif_label = ttk.Label(modif_frame, text=f"Mise à jour du stock de {item}", font=("", 11, "bold"))
             modif_label.grid(row=0, column=0, columnspan=3)
-            modif_entry = ttk.Spinbox(modif_frame, from_=0, to=50, justify="center",font=("Arial"))
+            modif_entry = ttk.Spinbox(modif_frame, from_=0, to=50, justify="center", font="Arial")
             modif_entry.set(tree.set(selected_item, self.headers[3]))
-            modif_entry.grid(row=1, column=0,sticky=tk.E)
+            modif_entry.grid(row=1, column=0, sticky=tk.E)
             apply_modif_button = ttk.Button(modif_frame, text="Valider", padding=5,
-                                            command=lambda: self.modif_apply(tree, modif_entry, selected_item,
-                                                                             modif_frame))
+                                            command=lambda: self.modif_stock_apply(tree, modif_entry, selected_item,
+                                                                                   modif_frame))
             apply_modif_button.grid(row=1, column=1, sticky=tk.E)
-            cancel_modif_button = ttk.Button(modif_frame, text="Annuler", padding=5, command=lambda: modif_frame.destroy())
-            cancel_modif_button.grid(row=1, column=2,sticky=tk.W)
+            cancel_modif_button = ttk.Button(modif_frame, text="Annuler", padding=5,
+                                             command=lambda: modif_frame.destroy())
+            cancel_modif_button.grid(row=1, column=2, sticky=tk.W)
             delete_reference_button = ttk.Button(modif_frame, text="Supprimer la référence",
                                                  command=lambda: self.delete_reference(tree, selected_item,
                                                                                        modif_frame))
@@ -89,14 +90,15 @@ class StockUI(tk.Tk):
 
     def delete_reference(self, tree, selected_item, modif_frame):
         item = tree.set(selected_item, self.headers[0])
-        choice = messagebox.askyesno(title="Supprimer référence", message=f"Voulez vous supprimer la référence {item} ?")
+        choice = messagebox.askyesno(title="Supprimer référence",
+                                     message=f"Voulez vous supprimer la référence {item} ?")
         if choice:
             tree.delete(selected_item)
             save_treeview_to_json(tree, StockUI.TREE_SAVE)
             tree.configure(height=len(tree.get_children()))
             modif_frame.destroy()
 
-    def modif_apply(self, tree, modif_entry, selected_item, modif_frame):
+    def modif_stock_apply(self, tree, modif_entry, selected_item, modif_frame):
         try:
             int(modif_entry.get())
             tree.set(selected_item, self.headers[3], modif_entry.get())
@@ -104,7 +106,7 @@ class StockUI(tk.Tk):
             modif_frame.destroy()
         except ValueError:
             modif_entry.set("")
-            messagebox.showwarning(title="ValueError",message="Merci de renseigner une valeur numérique entière")
+            messagebox.showwarning(title="ValueError", message="Merci de renseigner une valeur numérique entière")
 
     def add_reference(self):
         window_reference = tk.Toplevel()
@@ -126,6 +128,10 @@ class StockUI(tk.Tk):
 
     def add_reference_apply(self, window_reference, *args):
         values = [arg.get() for arg in args]
+        try:
+            int(values[3])
+        except ValueError:
+            values[3] = 0
         self.main_tree.insert('', 'end', values=values)
         self.main_tree.configure(height=len(self.main_tree.get_children()))
         save_treeview_to_json(self.main_tree, StockUI.TREE_SAVE)
