@@ -28,6 +28,7 @@ class StockUI(tk.Tk):
         self.config(menu=self.menu)
         self.main_frame = self.main_frame_init()
         self.main_tree = self.main_tree_init(self.main_frame)
+        self.modif_frame = None
 
     def menu_init(self):
         menu = tk.Menu(self)
@@ -44,8 +45,8 @@ class StockUI(tk.Tk):
     def main_frame_init(self):
         frame = ttk.Frame(self)
         title = ttk.Label(frame, text="Gestion des stock Amiédition")
-        title.pack()
-        frame.pack()
+        title.grid()
+        frame.grid(row=0)
         return frame
 
     def main_tree_init(self, frame):
@@ -62,31 +63,33 @@ class StockUI(tk.Tk):
             tree.insert('', tk.END, values=reference)
         tree.configure(height=len(reference_dict))
         tree.bind('<<TreeviewSelect>>', lambda event: self.modif_stock_reference(tree))
-        tree.pack()
+        tree.grid(row=1)
         return tree
 
     def modif_stock_reference(self, tree):
         selected_item = tree.selection()
         item = tree.set(selected_item, self.headers[0])
+        if isinstance(self.modif_frame, ttk.Frame):
+            self.modif_frame.destroy()
         if item != "":
-            modif_frame = ttk.Frame(self)
-            modif_label = ttk.Label(modif_frame, text=f"Mise à jour du stock de {item}", font=("", 11, "bold"))
+            self.modif_frame = ttk.Frame(self)
+            modif_label = ttk.Label(self.modif_frame, text=f"Mise à jour du stock de {item}", font=("", 11, "bold"))
             modif_label.grid(row=0, column=0, columnspan=3)
-            modif_entry = ttk.Spinbox(modif_frame, from_=0, to=50, justify="center", font="Arial")
+            modif_entry = ttk.Spinbox(self.modif_frame, from_=0, to=50, justify="center", font="Arial")
             modif_entry.set(tree.set(selected_item, self.headers[3]))
             modif_entry.grid(row=1, column=0, sticky=tk.E)
-            apply_modif_button = ttk.Button(modif_frame, text="Valider", padding=5,
+            apply_modif_button = ttk.Button(self.modif_frame, text="Valider", padding=5,
                                             command=lambda: self.modif_stock_apply(tree, modif_entry, selected_item,
-                                                                                   modif_frame))
+                                                                                   self.modif_frame))
             apply_modif_button.grid(row=1, column=1, sticky=tk.E)
-            cancel_modif_button = ttk.Button(modif_frame, text="Annuler", padding=5,
-                                             command=lambda: modif_frame.destroy())
+            cancel_modif_button = ttk.Button(self.modif_frame, text="Annuler", padding=5,
+                                             command=lambda: self.modif_frame.destroy())
             cancel_modif_button.grid(row=1, column=2, sticky=tk.W)
-            delete_reference_button = ttk.Button(modif_frame, text="Supprimer la référence",
+            delete_reference_button = ttk.Button(self.modif_frame, text="Supprimer la référence",
                                                  command=lambda: self.delete_reference(tree, selected_item,
-                                                                                       modif_frame))
+                                                                                       self.modif_frame))
             delete_reference_button.grid(row=2, column=1, columnspan=2)
-            modif_frame.pack()
+            self.modif_frame.grid(row=1)
 
     def delete_reference(self, tree, selected_item, modif_frame):
         item = tree.set(selected_item, self.headers[0])
