@@ -2,6 +2,7 @@ import json
 import tkinter as tk
 from tkinter import messagebox
 from tkinter import ttk
+import Envoi_mail
 
 
 def save_treeview_to_json(tree, filename):
@@ -22,7 +23,6 @@ class StockUI(tk.Tk):
         super().__init__()
         self.title("Gestion des stocks Amiéditions")
         self.iconbitmap(StockUI.ICON)
-        self.geometry("720x480")
         self.headers = ("Nom", "Modèle", "Référence", "Quantité restante")
         self.menu = self.menu_init()
         self.config(menu=self.menu)
@@ -43,10 +43,10 @@ class StockUI(tk.Tk):
         return menu
 
     def main_frame_init(self):
-        frame = ttk.Frame(self)
-        title = ttk.Label(frame, text="Gestion des stock Amiédition")
-        title.grid()
-        frame.grid(row=0)
+        frame = ttk.Frame(self, padding=10)
+        title = ttk.Label(frame, text="Gestion des stocks Amiédition",font=("Gotham", 20))
+        title.pack()
+        frame.pack(expand=True)
         return frame
 
     def main_tree_init(self, frame):
@@ -63,7 +63,7 @@ class StockUI(tk.Tk):
             tree.insert('', tk.END, values=reference)
         tree.configure(height=len(reference_dict))
         tree.bind('<<TreeviewSelect>>', lambda event: self.modif_stock_reference(tree))
-        tree.grid(row=1)
+        tree.pack(expand=True)
         return tree
 
     def modif_stock_reference(self, tree):
@@ -72,8 +72,8 @@ class StockUI(tk.Tk):
         if isinstance(self.modif_frame, ttk.Frame):
             self.modif_frame.destroy()
         if item != "":
-            self.modif_frame = ttk.Frame(self)
-            modif_label = ttk.Label(self.modif_frame, text=f"Mise à jour du stock de {item}", font=("", 11, "bold"))
+            self.modif_frame = ttk.Frame(self, padding=10)
+            modif_label = ttk.Label(self.modif_frame, text=f"Mise à jour du stock de {item}")
             modif_label.grid(row=0, column=0, columnspan=3)
             modif_entry = ttk.Spinbox(self.modif_frame, from_=0, to=50, justify="center", font="Arial")
             modif_entry.set(tree.set(selected_item, self.headers[3]))
@@ -89,7 +89,7 @@ class StockUI(tk.Tk):
                                                  command=lambda: self.delete_reference(tree, selected_item,
                                                                                        self.modif_frame))
             delete_reference_button.grid(row=2, column=1, columnspan=2)
-            self.modif_frame.grid(row=1)
+            self.modif_frame.pack()
 
     def delete_reference(self, tree, selected_item, modif_frame):
         item = tree.set(selected_item, self.headers[0])
@@ -100,11 +100,13 @@ class StockUI(tk.Tk):
             save_treeview_to_json(tree, StockUI.TREE_SAVE)
             tree.configure(height=len(tree.get_children()))
             modif_frame.destroy()
+            messagebox.showinfo(message="Suppression effectué")
 
     def modif_stock_apply(self, tree, modif_entry, selected_item, modif_frame):
+        modif_entry_get = modif_entry.get()
         try:
-            int(modif_entry.get())
-            tree.set(selected_item, self.headers[3], modif_entry.get())
+            int(modif_entry_get)
+            tree.set(selected_item, self.headers[3], modif_entry_get)
             save_treeview_to_json(tree, StockUI.TREE_SAVE)
             modif_frame.destroy()
         except ValueError:
@@ -131,14 +133,17 @@ class StockUI(tk.Tk):
 
     def add_reference_apply(self, window_reference, *args):
         values = [arg.get() for arg in args]
+        erreur_message = ""
         try:
             int(values[3])
         except ValueError:
             values[3] = 0
+            erreur_message = " (Attention 'Quantité restante' mise à 0)"
         self.main_tree.insert('', 'end', values=values)
         self.main_tree.configure(height=len(self.main_tree.get_children()))
         save_treeview_to_json(self.main_tree, StockUI.TREE_SAVE)
         window_reference.destroy()
+        messagebox.showinfo(message=f"Référence ajouté{erreur_message}")
 
     def toplevel_email_config(self):
         email_config = tk.Toplevel()
