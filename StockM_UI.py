@@ -26,12 +26,13 @@ class StockUI(tk.Tk):
         self.style = ttk.Style(self)
         self.tk.call("source", "theme/forest-light.tcl")
         self.style.theme_use("forest-light")
-        self.headers = ("Nom", "Modèle", "Référence", "Quantité restante", "Seuil")
+        self.headers = ("Nom", "Modèle", "Référence", "Stock", "Seuil d'alerte")
         self.menu = self.menu_init()
         self.config(menu=self.menu)
-        self.main_frame = self.main_frame_init()
-        self.main_tree = self.main_tree_init(self.main_frame)
+        self.main_frame = None
+        self.main_tree = None
         self.modif_frame = None
+        self.main_frame_init()
 
     def menu_init(self):
         menu = tk.Menu(self)
@@ -43,17 +44,26 @@ class StockUI(tk.Tk):
         submenu2.add_command(label="Email alerte", command=lambda: self.toplevel_email_config())
         menu.add_cascade(label="Fichier", menu=submenu1)
         menu.add_cascade(label="Paramètres", menu=submenu2)
+        menu.add_command(label="À propos",
+                         command=lambda: messagebox.showinfo(title="À propos",
+                                                             message="Programme créé par Brayan "
+                                                                     "Cuvelier (V1.0) 2023 \n"
+                                                                     "sous licence "
+                                                                     "Creative Commons Attribution\n"
+                                                                     "- Pas d'Utilisation Commerciale\n"
+                                                                     "- Pas de Modification\n4.0 "
+                                                                     "International License."))
         return menu
 
     def main_frame_init(self):
-        frame = ttk.Frame(self, padding=10)
-        title = ttk.Label(frame, text="Gestion des stocks Amiédition", font=("", 14, "bold"))
+        self.main_frame = ttk.Frame(self, padding=10)
+        title = ttk.Label(self.main_frame, text="Gestion des stocks Amiédition", font=("", 14, "bold"))
         title.pack()
-        frame.pack()
-        return frame
+        self.main_tree = self.main_tree_init()
+        self.main_frame.pack()
 
-    def main_tree_init(self, frame):
-        tree = ttk.Treeview(frame, columns=self.headers, show="headings", selectmode="browse",
+    def main_tree_init(self):
+        tree = ttk.Treeview(self.main_frame, columns=self.headers, show="headings", selectmode="browse",
                             padding=10, displaycolumns=(0, 1, 2, 3))
         for header in self.headers:
             tree.heading(header, text=f"{header}")
@@ -116,7 +126,7 @@ class StockUI(tk.Tk):
         modif_reference_window = tk.Toplevel(self)
         modif_reference_window.iconbitmap(StockUI.ICON)
         modif_reference_window.geometry("+%d+%d" % (root.winfo_rootx() + 50, root.winfo_rooty()))
-        modif_reference_frame = ttk.LabelFrame(modif_reference_window, text="Modification d'une référence")
+        modif_reference_frame = ttk.LabelFrame(modif_reference_window, text="Modification d'une référence",padding=10)
         info_entry_list = []
         for index, info in enumerate(tree.set(selected_item)):
             if info != self.headers[3]:
@@ -127,10 +137,15 @@ class StockUI(tk.Tk):
                 info_entry.grid(row=index, column=1)
                 info_entry_list.append(info_entry)
         modif_reference_frame.pack()
-        add_button = ttk.Button(modif_reference_frame, text="Modifier",
+        modif_reference_subframe = ttk.Frame(modif_reference_frame, padding=10)
+        add_button = ttk.Button(modif_reference_subframe, text="Modifier",
                                 command=lambda: self.modif_reference_apply(modif_reference_window,
                                                                            selected_item, *info_entry_list))
-        add_button.grid(column=0, columnspan=2)
+        add_button.grid(row=0, column=0, padx=5)
+        cancel_button = ttk.Button(modif_reference_subframe, text="Annuler",
+                                   command=lambda: modif_reference_window.destroy())
+        cancel_button.grid(row=0, column=1)
+        modif_reference_subframe.grid(row=5, columnspan=2, padx=5)
 
     def modif_reference_apply(self, modif_reference_window, selected_item, *args):
         values = [arg.get() for arg in args]
@@ -163,7 +178,7 @@ class StockUI(tk.Tk):
         window_reference.title("Gestion des références")
         window_reference.geometry("+%d+%d" % (root.winfo_rootx() + 50, root.winfo_rooty()))
         window_reference.iconbitmap(StockUI.ICON)
-        frame_reference = ttk.Frame(window_reference)
+        frame_reference = ttk.Labelframe(window_reference, text="Ajout d'une référence", padding=10)
         header_entry_list = []
         for index, header in enumerate(self.headers):
             header_label = ttk.Label(frame_reference, text=header)
@@ -172,9 +187,9 @@ class StockUI(tk.Tk):
             header_entry.grid(row=index, column=2)
             header_entry_list.append(header_entry)
         frame_reference.pack()
-        add_button = ttk.Button(window_reference, text="Ajouter",
+        add_button = ttk.Button(frame_reference, text="Ajouter",
                                 command=lambda: self.add_reference_apply(window_reference, *header_entry_list))
-        add_button.pack()
+        add_button.grid(column=0,columnspan=3,pady=10)
 
     def add_reference_apply(self, window_reference, *args):
         values = [arg.get() for arg in args]
