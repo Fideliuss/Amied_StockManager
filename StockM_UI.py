@@ -23,6 +23,9 @@ class StockUI(tk.Tk):
         super().__init__()
         self.title("Gestion des stocks Amiéditions")
         self.iconbitmap(StockUI.ICON)
+        self.style = ttk.Style(self)
+        self.tk.call("source", "theme/forest-light.tcl")
+        self.style.theme_use("forest-light")
         self.headers = ("Nom", "Modèle", "Référence", "Quantité restante", "Seuil")
         self.menu = self.menu_init()
         self.config(menu=self.menu)
@@ -44,7 +47,7 @@ class StockUI(tk.Tk):
 
     def main_frame_init(self):
         frame = ttk.Frame(self, padding=10)
-        title = ttk.Label(frame, text="Gestion des stocks Amiédition", font=("Gotham", 20))
+        title = ttk.Label(frame, text="Gestion des stocks Amiédition", font=("", 14, "bold"))
         title.pack()
         frame.pack()
         return frame
@@ -80,9 +83,9 @@ class StockUI(tk.Tk):
             modif_entry.set(tree.set(selected_item, self.headers[3]))
             modif_entry.grid(row=1, column=0, sticky=tk.E)
             apply_modif_sotck_button = ttk.Button(self.modif_frame, text="Valider", padding=5,
-                                                  command=lambda: self.modif_stock_apply(tree, modif_entry,
-                                                                                         selected_item,
-                                                                                         self.modif_frame))
+                                                  command=lambda: self.modif_stock_reference_apply(tree, modif_entry,
+                                                                                                   selected_item,
+                                                                                                   self.modif_frame))
             apply_modif_sotck_button.grid(row=1, column=1, sticky=tk.E)
             cancel_modif_stock_button = ttk.Button(self.modif_frame, text="Annuler", padding=5,
                                                    command=lambda: self.modif_frame.destroy())
@@ -96,11 +99,23 @@ class StockUI(tk.Tk):
             modif_reference_button.grid(row=2, column=0, sticky=tk.E, pady=10)
             self.modif_frame.pack()
 
+    def modif_stock_reference_apply(self, tree, modif_entry, selected_item, modif_frame):
+        modif_entry_get = modif_entry.get()
+        try:
+            int(modif_entry_get)
+            tree.set(selected_item, self.headers[3], modif_entry_get)
+            save_treeview_to_json(tree, StockUI.TREE_SAVE)
+            modif_frame.destroy()
+        except ValueError:
+            modif_entry.set("")
+            messagebox.showwarning(title="ValueError", message="Merci de renseigner une valeur numérique entière")
+
     def modif_reference(self, tree, selected_item):
         modif_reference_window = tk.Toplevel(self)
         modif_reference_window.iconbitmap(StockUI.ICON)
         modif_reference_window.geometry("+%d+%d" % (root.winfo_rootx() + 50, root.winfo_rooty()))
         modif_reference_frame = ttk.LabelFrame(modif_reference_window, text="Modification d'une référence")
+        info_entry_list = []
         for index, info in enumerate(tree.set(selected_item)):
             if info != self.headers[3]:
                 info_label = ttk.Label(modif_reference_frame, text=info)
@@ -108,9 +123,27 @@ class StockUI(tk.Tk):
                 info_entry.insert(0, tree.set(selected_item, self.headers[index]))
                 info_label.grid(row=index, column=0)
                 info_entry.grid(row=index, column=1)
+                info_entry_list.append(info_entry)
         modif_reference_frame.pack()
-        add_button = ttk.Button(modif_reference_frame, text="Modifier")
+        add_button = ttk.Button(modif_reference_frame, text="Modifier",
+                                command=lambda: self.modif_reference_apply(modif_reference_window,
+                                                                           selected_item, *info_entry_list))
         add_button.grid(column=0, columnspan=2)
+
+    def modif_reference_apply(self, modif_reference_window, selected_item, *args):
+        values = [arg.get() for arg in args]
+        values.insert(3, self.main_tree.item(selected_item)["values"][3])
+        erreur_message = ""
+        try:
+            int(values[4])
+        except ValueError:
+            values[4] = 0
+            erreur_message = " (Attention 'Seuil' mis à 0)"
+        for index, header in enumerate(self.headers):
+            self.main_tree.set(selected_item, header, values[index])
+        save_treeview_to_json(self.main_tree, StockUI.TREE_SAVE)
+        modif_reference_window.destroy()
+        messagebox.showinfo(title="Modification effectuée", message=f"{values[0]} modifié{erreur_message}")
 
     def delete_reference(self, tree, selected_item, modif_frame):
         item = tree.set(selected_item, self.headers[0])
@@ -122,17 +155,6 @@ class StockUI(tk.Tk):
             tree.configure(height=len(tree.get_children()))
             modif_frame.destroy()
             messagebox.showinfo(message="Suppression effectuée")
-
-    def modif_stock_apply(self, tree, modif_entry, selected_item, modif_frame):
-        modif_entry_get = modif_entry.get()
-        try:
-            int(modif_entry_get)
-            tree.set(selected_item, self.headers[3], modif_entry_get)
-            save_treeview_to_json(tree, StockUI.TREE_SAVE)
-            modif_frame.destroy()
-        except ValueError:
-            modif_entry.set("")
-            messagebox.showwarning(title="ValueError", message="Merci de renseigner une valeur numérique entière")
 
     def add_reference(self):
         window_reference = tk.Toplevel()
