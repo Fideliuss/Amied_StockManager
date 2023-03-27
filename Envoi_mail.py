@@ -14,17 +14,17 @@ class EnvoiGMail:
     SMTP_SERVER = "smtp.gmail.com"
     SMTP_PORT = 587
 
-    def __init__(self, username):
+    def __init__(self, username, password=None):
         self.username = username
-        self.password = self.password_init()
+        self.password = self.password_init(password)
         self.msg = MIMEMultipart()
         self.smtp_conn = smtplib.SMTP(EnvoiGMail.SMTP_SERVER, EnvoiGMail.SMTP_PORT)
         self.login_init()
 
-    def password_init(self):
+    def password_init(self, passw):
         password = keyring.get_password(EnvoiGMail.SMTP_SERVER, self.username)
         if password is None:
-            password = input("Mot de passe d'app: ")
+            password = passw
             keyring.set_password(EnvoiGMail.SMTP_SERVER, self.username, password)
         return password
 
