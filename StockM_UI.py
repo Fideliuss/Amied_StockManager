@@ -2,6 +2,7 @@ import json
 import tkinter as tk
 from tkinter import messagebox
 from tkinter import ttk
+from tkinter import simpledialog
 import Envoi_mail
 
 
@@ -21,6 +22,18 @@ def get_email_alert():
         return email
 
 
+def get_username():
+    try:
+        with open("saves/email_login.txt", "r") as f:
+            email = f.read()
+            return email
+    except:
+        email = simpledialog.askstring("Première connexion", " Votre adresse mail ?")
+        with open("saves/email_login.txt", "w") as f:
+            f.write(email)
+        return email
+
+
 class StockUI(tk.Tk):
     ICON = "icon/Logo_GB_2015.ico"
     TREE_SAVE = "saves/tree_save.json"
@@ -37,6 +50,7 @@ class StockUI(tk.Tk):
         self.headers = ("Nom", "Modèle", "Référence", "Stock", "Seuil d'alerte")
         self.menu = self.menu_init()
         self.config(menu=self.menu)
+        self.send_email = Envoi_mail.EnvoiGMail(get_username())
         self.main_frame = None
         self.main_tree = None
         self.modif_frame = None
@@ -99,23 +113,23 @@ class StockUI(tk.Tk):
             modif_labelframe.grid(row=0)
             modif_entry = ttk.Spinbox(modif_labelframe, from_=0, to=100, justify="center")
             modif_entry.set(tree.set(selected_item, self.headers[3]))
-            modif_entry.grid(row=1, column=0, sticky=tk.E)
+            modif_entry.grid(row=1, column=0, sticky=tk.E,padx=10)
             apply_modif_sotck_button = ttk.Button(modif_labelframe, text="Valider", padding=5,
                                                   command=lambda: self.modif_stock_reference_apply(tree, modif_entry,
                                                                                                    selected_item,
                                                                                                    self.modif_frame))
-            apply_modif_sotck_button.grid(row=1, column=1, sticky=tk.E)
+            apply_modif_sotck_button.grid(row=1, column=1, sticky=tk.E,padx=5)
             cancel_modif_stock_button = ttk.Button(modif_labelframe, text="Annuler", padding=5,
                                                    command=lambda: self.modif_frame.destroy())
-            cancel_modif_stock_button.grid(row=1, column=2, sticky=tk.W)
+            cancel_modif_stock_button.grid(row=1, column=2, sticky=tk.W,padx=5)
             modif_subframe = ttk.Frame(self.modif_frame, padding=10)
             delete_reference_button = ttk.Button(modif_subframe, text="Supprimer la référence",
                                                  command=lambda: self.delete_reference(tree, selected_item,
                                                                                        self.modif_frame))
-            delete_reference_button.grid(row=0, column=1)
+            delete_reference_button.grid(row=0, column=1,padx=5)
             modif_reference_button = ttk.Button(modif_subframe, text="Modifier la référence",
                                                 command=lambda: self.modif_reference(tree, selected_item, ))
-            modif_reference_button.grid(row=0, column=0)
+            modif_reference_button.grid(row=0, column=0,padx=5)
             modif_subframe.grid(row=1, column=0, columnspan=3)
             self.modif_frame.pack()
 
@@ -224,11 +238,8 @@ class StockUI(tk.Tk):
         email_conn_label.grid(row=0, column=0)
         email_conn_entry = ttk.Entry(frame_conn_serv)
         email_conn_entry.grid(row=0, column=1)
-        password_conn_label = ttk.Label(frame_conn_serv, text="Mot de passe : ")
-        password_conn_label.grid(row=1, column=0)
-        password_conn_entry = ttk.Entry(frame_conn_serv, show="●")
-        password_conn_entry.grid(row=1, column=1)
-        conn_button = ttk.Button(frame_conn_serv, text="Connexion", padding=5)
+        conn_button = ttk.Button(frame_conn_serv, text="Connexion", padding=5,
+                                 command=lambda: self.set_email_login(email_conn_entry.get()))
         conn_button.grid(row=0, rowspan=2, column=2, padx=10)
         frame_email_alerte = ttk.LabelFrame(email_config, text="Email de destination des alertes", padding=10)
         frame_email_alerte.pack(expand=True, pady=10)
@@ -248,6 +259,12 @@ class StockUI(tk.Tk):
             with open("saves/email_alerte.txt", "w") as f:
                 f.write(email)
             self.email_alerte = email
+
+    def set_email_login(self, email):
+        self.send_email = Envoi_mail.EnvoiGMail(email)
+        with open("saves/email_login.txt", "w") as f:
+            f.write(email)
+        self.email_alerte = email
 
 
 if __name__ == "__main__":
