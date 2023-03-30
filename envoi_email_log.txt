@@ -1,0 +1,7 @@
+2023-03-30 20:26:58,770 - DEBUG - Loading KWallet
+2023-03-30 20:26:58,772 - DEBUG - Loading SecretService
+2023-03-30 20:26:58,773 - DEBUG - Loading Windows
+2023-03-30 20:26:58,790 - DEBUG - Loading chainer
+2023-03-30 20:26:58,791 - DEBUG - Loading libsecret
+2023-03-30 20:26:58,792 - DEBUG - Loading macOS
+2023-03-30 20:26:59,054 - INFO - Connexion établie
