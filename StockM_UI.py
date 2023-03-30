@@ -17,8 +17,14 @@ def save_treeview_to_json(tree, filename):
 
 
 def get_email_alert():
-    with open("saves/email_alerte.txt", "r") as f:
-        email = f.read()
+    try:
+        with open("saves/email_alerte.txt", "r") as f:
+            email = f.read()
+            return email
+    except FileNotFoundError:
+        email = simpledialog.askstring("Première connexion", "Définisissez une adresse d'alerte :")
+        with open("saves/email_alerte.txt", "w") as f:
+            f.write(email)
         return email
 
 
@@ -27,8 +33,8 @@ def get_username():
         with open("saves/email_login.txt", "r") as f:
             email = f.read()
             return email
-    except:
-        email = simpledialog.askstring("Première connexion", " Votre adresse mail ?")
+    except FileNotFoundError:
+        email = simpledialog.askstring("Première connexion", "Votre adresse mail ?")
         with open("saves/email_login.txt", "w") as f:
             f.write(email)
         return email
@@ -37,13 +43,14 @@ def get_username():
 class StockUI(tk.Tk):
     ICON = "icon/Logo_GB_2015.ico"
     TREE_SAVE = "saves/tree_save.json"
-    VERSION = "Beta 0.5"
+    VERSION = "Version Beta 0.5 2013"
 
     def __init__(self):
         super().__init__()
         self.title("Gestion des stocks Amiéditions")
         self.iconbitmap(StockUI.ICON)
         self.resizable(False, False)
+        self.protocol("WM_DELETE_WINDOW", self.on_closing)
         self.style = ttk.Style(self)
         self.tk.call("source", "theme/forest-light.tcl")
         self.style.theme_use("forest-light")
@@ -69,7 +76,7 @@ class StockUI(tk.Tk):
         menu.add_cascade(label="Paramètres", menu=submenu2)
         menu.add_command(label="À propos",
                          command=lambda: messagebox.showinfo(title="À propos",
-                                                             message=f"Version {StockUI.VERSION} 2023\n"
+                                                             message=f"{StockUI.VERSION}\n"
                                                                      "Programme créé par Brayan Cuvelier sous licence\n"
                                                                      "Creative Commons Attribution\n"
                                                                      "- Pas d'Utilisation Commerciale\n"
@@ -113,35 +120,41 @@ class StockUI(tk.Tk):
             modif_labelframe.grid(row=0)
             modif_entry = ttk.Spinbox(modif_labelframe, from_=0, to=100, justify="center")
             modif_entry.set(tree.set(selected_item, self.headers[3]))
-            modif_entry.grid(row=1, column=0, sticky=tk.E,padx=10)
-            apply_modif_sotck_button = ttk.Button(modif_labelframe, text="Valider", padding=5,
+            modif_entry.grid(row=1, column=0, sticky=tk.E, padx=10)
+            apply_modif_stock_button = ttk.Button(modif_labelframe, text="Valider", padding=5,
                                                   command=lambda: self.modif_stock_reference_apply(tree, modif_entry,
                                                                                                    selected_item,
                                                                                                    self.modif_frame))
-            apply_modif_sotck_button.grid(row=1, column=1, sticky=tk.E,padx=5)
+            apply_modif_stock_button.grid(row=1, column=1, sticky=tk.E, padx=5)
             cancel_modif_stock_button = ttk.Button(modif_labelframe, text="Annuler", padding=5,
                                                    command=lambda: self.modif_frame.destroy())
-            cancel_modif_stock_button.grid(row=1, column=2, sticky=tk.W,padx=5)
+            cancel_modif_stock_button.grid(row=1, column=2, sticky=tk.W, padx=5)
             modif_subframe = ttk.Frame(self.modif_frame, padding=10)
             delete_reference_button = ttk.Button(modif_subframe, text="Supprimer la référence",
                                                  command=lambda: self.delete_reference(tree, selected_item,
                                                                                        self.modif_frame))
-            delete_reference_button.grid(row=0, column=1,padx=5)
+            delete_reference_button.grid(row=0, column=1, padx=5)
             modif_reference_button = ttk.Button(modif_subframe, text="Modifier la référence",
                                                 command=lambda: self.modif_reference(tree, selected_item, ))
-            modif_reference_button.grid(row=0, column=0,padx=5)
+            modif_reference_button.grid(row=0, column=0, padx=5)
             modif_subframe.grid(row=1, column=0, columnspan=3)
             self.modif_frame.pack()
 
     def modif_stock_reference_apply(self, tree, modif_entry, selected_item, modif_frame):
         modif_entry_get = modif_entry.get()
+        seuil = self.main_tree.item(selected_item)["values"][4]
+        reference = self.main_tree.item(selected_item)["values"]
         try:
-            int(modif_entry_get)
+            modif_entry_get = int(modif_entry_get)
+            seuil = int(seuil)
+            reference[3] = modif_entry_get
             tree.set(selected_item, self.headers[3], modif_entry_get)
             save_treeview_to_json(tree, StockUI.TREE_SAVE)
+            if modif_entry_get < seuil:
+                self.send_alerte_mail(reference)
             modif_frame.destroy()
         except ValueError:
-            modif_entry.set("")
+            modif_entry.set(self.main_tree.item(selected_item)["values"][3])
             messagebox.showwarning(title="ValueError", message="Merci de renseigner une valeur numérique entière")
 
     def modif_reference(self, tree, selected_item):
@@ -229,7 +242,7 @@ class StockUI(tk.Tk):
 
     def toplevel_email_config(self):
         email_config = tk.Toplevel()
-        email_config.grab_set()
+        email_config.resizable(False, False)
         email_config.iconbitmap(StockUI.ICON)
         email_config.geometry("+%d+%d" % (root.winfo_rootx() + 50, root.winfo_rooty()))
         frame_conn_serv = ttk.LabelFrame(email_config, text="Connexion au serveur mail", padding=10)
@@ -240,7 +253,11 @@ class StockUI(tk.Tk):
         email_conn_entry.grid(row=0, column=1)
         conn_button = ttk.Button(frame_conn_serv, text="Connexion", padding=5,
                                  command=lambda: self.set_email_login(email_conn_entry.get()))
-        conn_button.grid(row=0, rowspan=2, column=2, padx=10)
+        conn_button.grid(row=0, column=2, padx=10)
+        if self.send_email.smtp_conn.noop()[0] == 250:
+            email_conn_status_label = ttk.Label(frame_conn_serv, font=("", 8),
+                                                text=f"Actuellement connecté avec l'adresse {self.send_email.username}")
+            email_conn_status_label.grid(row=1, column=0, columnspan=3, sticky=tk.S)
         frame_email_alerte = ttk.LabelFrame(email_config, text="Email de destination des alertes", padding=10)
         frame_email_alerte.pack(expand=True, pady=10)
         email_alerte_label = ttk.Label(frame_email_alerte, text="Adresse mail : ")
@@ -265,6 +282,25 @@ class StockUI(tk.Tk):
         with open("saves/email_login.txt", "w") as f:
             f.write(email)
         self.email_alerte = email
+        messagebox.showinfo("Connexion réussie", f"Connexion avec l'adresse {self.send_email.username} réussie")
+
+    def send_alerte_mail(self, low_reference):
+        reference = low_reference
+        subject = f"Amiéditions StockManager - La référence {reference[0]} Modèle N°{reference[1]} a atteint son seuil."
+        message = f"Bonjour,\n" \
+                  f"La référence suivante : {reference[0]} (référence commande Amiéditions {reference[2]}) " \
+                  f"à atteint un seuil bas au niveau de son stock ({reference[3]} restant(s)), " \
+                  f"pensez à passer commande.\n\n" \
+                  f"Bien cordialement,\n\n" \
+                  f"Envoyé automatiquement grâce à Amiéditons StockManager {StockUI.VERSION}"
+        self.send_email.mail_set_body(self.email_alerte, subject, message)
+        self.send_email.send_mail()
+        self.send_email = Envoi_mail.EnvoiGMail(get_username())
+
+    def on_closing(self):
+        if tk.messagebox.askokcancel("Quitter", "Êtes-vous sûr de vouloir quitter ?"):
+            self.destroy()
+            self.send_email.smtp_conn.quit()
 
 
 if __name__ == "__main__":
