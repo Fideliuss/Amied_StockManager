@@ -43,7 +43,7 @@ def get_username():
 class StockUI(tk.Tk):
     ICON = "icon/Logo_GB_2015.ico"
     TREE_SAVE = "saves/tree_save.json"
-    VERSION = "Version Beta 0.5 2013"
+    VERSION = "Version Stable 1.0 2023"
 
     def __init__(self):
         super().__init__()
