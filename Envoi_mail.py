@@ -5,6 +5,7 @@ from email.mime.base import MIMEBase
 from email import encoders
 import logging
 import keyring
+from tkinter import simpledialog
 
 logging.basicConfig(level=logging.DEBUG, filename="envoi_email_log.txt", filemode="w",
                     format="%(asctime)s - %(levelname)s - %(message)s")
@@ -24,7 +25,7 @@ class EnvoiGMail:
     def password_init(self):
         password = keyring.get_password(EnvoiGMail.SMTP_SERVER, self.username)
         if password is None:
-            password = input("Mot de passe d'app: ")
+            password = simpledialog.askstring("Mot de passe", "Veuillez entrer votre mot de passe d'application")
             keyring.set_password(EnvoiGMail.SMTP_SERVER, self.username, password)
         return password
 
@@ -33,6 +34,7 @@ class EnvoiGMail:
         self.smtp_conn.starttls()  # Initialisation de la connexion sécurisée TLS
         self.smtp_conn.ehlo()
         self.smtp_conn.login(self.username, self.password)
+        logging.info("Connexion établie")
 
     def mail_set_body(self, dest_email, objet, message):  # Envoi d'un message
         self.msg['From'] = self.username
@@ -52,6 +54,7 @@ class EnvoiGMail:
 
     def send_mail(self):
         self.smtp_conn.sendmail(self.msg["From"], self.msg["To"], self.msg.as_string())
+        logging.info("Email envoyé")
         self.smtp_conn.quit()
 
 
@@ -60,14 +63,12 @@ def main():
         mail_adress = input("Adresse mail : ")
         try:
             email = EnvoiGMail(mail_adress)
-            logging.info("Connexion établie")
             print("Connexion établie")
             email.mail_set_body(input("Destinataire : "), input("Objet :"), input("Message : "))
             file_path = input("Chemin du fichier : ")
             if file_path != "":
                 email.mail_set_attach(file_path)
             email.send_mail()
-            logging.info("Email envoyé")
             print("Email envoyé")
             break
         except smtplib.SMTPAuthenticationError:
