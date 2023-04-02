@@ -289,7 +289,7 @@ class StockUI(tk.Tk):
         subject = f"Amiéditions StockManager - La référence {reference[0]} Modèle N°{reference[1]} a atteint son seuil."
         message = f"Bonjour,\n" \
                   f"La référence suivante : {reference[0]} (référence commande Amiéditions {reference[2]}) " \
-                  f"à atteint un seuil bas au niveau de son stock ({reference[3]} restant(s)), " \
+                  f"a atteint un seuil bas au niveau de son stock ({reference[3]} restant(s)), " \
                   f"pensez à passer commande.\n\n" \
                   f"Bien cordialement,\n\n" \
                   f"Envoyé automatiquement grâce à Amiéditons StockManager {StockUI.VERSION}"

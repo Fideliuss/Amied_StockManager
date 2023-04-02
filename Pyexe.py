@@ -1,4 +1,5 @@
 import PyInstaller.__main__
+import StockM_UI
 
 PyInstaller.__main__.run([
     'StockM_UI.py',
@@ -8,5 +9,5 @@ PyInstaller.__main__.run([
     '--add-data=theme/forest-light/*;theme/forest-light',
     '--add-data=theme/forest-light.tcl;theme/',
     '--icon=icon/logo_amiedition_resize.ico',
-    '--name=Amiedtions Stock Manager'
+    f'--name=Amiedtions S_Manager {StockM_UI.StockUI.VERSION}'
 ])
